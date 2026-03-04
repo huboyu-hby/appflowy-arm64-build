@@ -48,6 +48,10 @@ ENV PATH="/opt/flutter/bin:${PATH}"
 RUN git clone https://github.com/AppFlowy-IO/appflowy.git /appflowy
 WORKDIR /appflowy
 
+# 修复git权限问题
+RUN git config --global --add safe.directory /opt/flutter
+RUN git config --global --add safe.directory /appflowy
+
 # 构建AppFlowy
 RUN flutter pub get && \
     flutter build linux
