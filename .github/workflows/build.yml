@@ -1,64 +1,30 @@
-name: Build AppFlowy ARM64 Docker Image
+name: Build AppFlowy Cross-Platform Image
 
-# 触发条件：push到main分支，或手动触发
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # 允许手动触发构建
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-arm64:
+  build:
     runs-on: ubuntu-latest
     steps:
-      # 1. 检出代码
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 拉取完整历史，避免构建时依赖缺失
-
-      # 2. 设置QEMU（关键：x86_64 runner交叉编译ARM64必需）
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      # 3. 设置Docker Buildx（支持多架构/交叉编译）
+      - uses: actions/checkout@v3
+      
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          buildkitd-flags: --debug  # 可选，便于排查构建问题
-
-      # 4. 登录Docker Hub（推送镜像用）
+        uses: docker/setup-buildx-action@v2
+        
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
-          username: ${{ secrets.baiyuaike1 }}
-          password: ${{ secrets.dckr_pat_K28A0Jtt4aW_twdEJO5m5b3WrGQ }}
-
-      # 5. 构建并推送ARM64镜像（核心步骤）
-      - name: Build and push ARM64 image
+          username: baiyuaike1
+          password: dckr_pat_K28A0Jtt4aW_twdEJO5m5b3WrGQ
+          
+      - name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./Dockerfile  # 指向你的Dockerfile路径
-          platforms: linux/arm64  # 仅构建ARM64架构
-          push: true  # 推送到Docker Hub
-          tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:arm64-latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:${{ github.sha }}-arm64  # 带提交哈希的标签
-          # 缓存优化：复用之前的构建缓存，大幅加速
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:arm64-cache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:arm64-cache,mode=max
-          # 传递构建参数（匹配Dockerfile中的UID/GID，默认1000）
-          build-args: |
-            uid=1000
-            gid=1000
-          # 仅构建ARM64相关阶段（减少冗余）
-          target: app-arm64
-
-      # 6. 验证镜像（可选，确保构建成功）
-      - name: Verify ARM64 image
-        run: |
-          # 拉取刚推送的镜像
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:arm64-latest
-          # 检查镜像架构
-          docker inspect --format '{{.Architecture}}' ${{ secrets.DOCKER_HUB_USERNAME }}/appflowy:arm64-latest
-          # 输出应为arm64，验证构建成功
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: baiyuaike1/appflowy:latest
