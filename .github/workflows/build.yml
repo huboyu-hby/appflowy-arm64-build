@@ -30,7 +30,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ baiyuaike1 }}
+          username: ${{ secrets.baiyuaike1 }}
           password: ${{ dckr_pat_K28A0Jtt4aW_twdEJO5m5b3WrGQ }}
 
       # 5. 构建并推送ARM64镜像（核心步骤）
